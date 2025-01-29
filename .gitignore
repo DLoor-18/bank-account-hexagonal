@@ -1,5 +1,6 @@
-# IDE
+# others
 .vscode
+.angular
 
 # Logs
 logs
