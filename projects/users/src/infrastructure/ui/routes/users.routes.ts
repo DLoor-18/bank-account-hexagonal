@@ -1,8 +1,29 @@
-import { AuthUserComponent } from "../containers/auth-user/auth-user.component";
+import { Routes } from "@angular/router";
 
-export const usersRoutes = [
+import { AuthComponent } from "../containers/auth/auth.component";
+import { DashboardComponent } from "../containers/dashboard/dashboard.component";
+import { LayoutComponent, authGuard } from "shared";
+import { UserComponent } from "../containers/user/user.component";
+
+export const usersRoutes: Routes= [
     {
         path: 'login',
-        component: AuthUserComponent
+        component: AuthComponent
+    },
+    {
+        path: '',
+        component: LayoutComponent,
+        canActivate: [ authGuard ],
+        children: [
+            {
+                path: '',
+                component: DashboardComponent
+            },
+            {
+                path: 'user',
+                component: UserComponent
+            }
+        ]
+
     }
 ];
