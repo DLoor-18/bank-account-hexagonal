@@ -1,7 +1,7 @@
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { Validators } from '@angular/forms';
-import { Subject, takeUntil, timer } from 'rxjs';
-import { CardComponent, DialogComponent, DialogService, FormComponent, FormService, IButton, ICard, IField, IForm, IModal, InputService, ITableHeader, LoaderService, ModalComponent, TableComponent, TableEventsService, ToastService } from 'shared';
+import { Subject, takeUntil } from 'rxjs';
+import { CardComponent, DialogComponent, DialogService, FormComponent, FormService, IButton, ICard, IField, IForm, IModal, InputService, ITableHeader, ModalComponent, TableComponent, TableEventsService, ToastService } from 'shared';
 import { GetAllUsersUseCase } from '../../../../application/get-all-users.usecase';
 import { SaveUsersUseCase } from '../../../../application/save-user.usecase';
 import { IUserRequest } from '../../../../domain/model/user-request.model';
@@ -23,7 +23,6 @@ export class UserComponent implements OnInit, OnDestroy{
   private formService = inject(FormService);
   private dialogService = inject(DialogService);
   private toastService = inject(ToastService);
-  private loaderService = inject(LoaderService);
   
   private userRequest: IUserRequest | undefined;
   showModal = false;
