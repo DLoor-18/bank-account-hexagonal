@@ -1,6 +1,6 @@
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { Validators } from '@angular/forms';
-import { concatMap, delay, Observable, of, Subject, takeUntil, tap } from 'rxjs';
+import { Subject, takeUntil, timer } from 'rxjs';
 import { CardComponent, DialogComponent, DialogService, FormComponent, FormService, IButton, ICard, IField, IForm, IModal, InputService, ITableHeader, LoaderService, ModalComponent, TableComponent, TableEventsService, ToastService } from 'shared';
 import { GetAllUsersUseCase } from '../../../../application/get-all-users.usecase';
 import { SaveUsersUseCase } from '../../../../application/save-user.usecase';
@@ -17,8 +17,8 @@ export class UserComponent implements OnInit, OnDestroy{
   private readonly _getUsersUseCase = inject(GetAllUsersUseCase);
   private destroyTableEvent$ = new Subject<void>();
   private destroyForm$ = new Subject<void>();
-  public user$: Observable<IUserResponse>;
-  public listUser$: Observable<IUserResponse[]>;
+  private destroyGetUsers$ = new Subject<void>();
+  private destroySaveUser$ = new Subject<void>();
   private tableEventsService = inject(TableEventsService);
   private formService = inject(FormService);
   private dialogService = inject(DialogService);
@@ -112,7 +112,10 @@ export class UserComponent implements OnInit, OnDestroy{
     }
   };
 
-  constructor(){
+  ngOnInit(): void {
+    this._getUsersUseCase.initSubscriptions();
+    this._saveUserUseCase.initSubscriptions();
+
     this.tableEventsService.event$.pipe(takeUntil(this.destroyTableEvent$)).subscribe(event => {
         this.showModal = true;
     });
@@ -122,14 +125,15 @@ export class UserComponent implements OnInit, OnDestroy{
       this.userRequest.userRole = this.userRequest.userRole ?? 'ROLE_EXECUTIVE';
       this.dialogConfirm();
     });
-  }
 
-  ngOnInit(): void {
-    this._getUsersUseCase.initSubscriptions();
-    this.listUser$ = this._getUsersUseCase.listUsers$();
-    this._saveUserUseCase.initSubscriptions();
-    this.user$ = this._saveUserUseCase.saveUser$();
+    this._getUsersUseCase.listUsers$().pipe(takeUntil(this.destroyGetUsers$)).subscribe(result => {
+      this.loadUsers(result);
+    });
     
+    this._saveUserUseCase.saveUser$().pipe(takeUntil(this.destroySaveUser$)).subscribe(result => {
+      this.validCreateUser(result);
+    });
+
     this.getAllUsers();
   }
 
@@ -140,52 +144,44 @@ export class UserComponent implements OnInit, OnDestroy{
     this.destroyForm$.next();
     this.destroyForm$.complete();
 
+    this.destroyGetUsers$.next();
+    this.destroyGetUsers$.complete();
+
     this._getUsersUseCase.destroySubscriptions();
     this._saveUserUseCase.destroySubscriptions();
   }
 
-  dialogConfirm() {
+  dialogConfirm(): void {
     this.presentDialog = true;
     this.dialogService.emitDialog("Confirm process", "Are you sure you want to continue with this process?", "Cancel", "Confirm");
   }
 
-  getAllUsers(){
-    this.loaderService.show(true);
-    of(this._getUsersUseCase.execute()).pipe(
-      concatMap(() => this.listUser$),
-      tap(result => {
-        if(result.length && this.cardData.componentInputs)
-          this.cardData.componentInputs['dataBody'] = result;
-        else
-          this.toastService.emitToast("Error", "No Users found", "error", true);
-  
-        this.loaderService.show(false);
-      })
-    ).subscribe();
-    
+  getAllUsers(): void {
+    this._getUsersUseCase.execute();
   }
 
-  createUser() {
+  createUser(): void {
     if(!this.userRequest) 
       return;
 
-    this.loaderService.show(true);
-    of(this._saveUserUseCase.execute(this.userRequest)).pipe(delay(4000),
-      concatMap(() => this.user$),
-      tap(result => {
-        if(result){
-            this.toastService.emitToast("Success", "User created successfully", "success", true);
-            this.presentDialog = false;
-            this.showModal = false;
-            return of (this.getAllUsers()); 
-          }
-        else{
-          this.toastService.emitToast("Error", "User not created", "error", true);
-          this.loaderService.show(false);
-          return of(null);
-        }
-      })
-    ).subscribe();
+    this._saveUserUseCase.execute(this.userRequest);
   }
-  
+
+  loadUsers(result: IUserResponse[]): void {
+    if(result?.length)
+      this.cardData.componentInputs['dataBody'] = result;
+    else if (result !== null)
+      this.toastService.emitToast("Error", "No Users found", "error", true);
+  }
+
+  validCreateUser(result: IUserResponse): void {
+    if(result){
+      this.presentDialog = false;
+      this.showModal = false;
+      this.toastService.emitToast("Success", "User created successfully", "success", true);    
+    } else if (this.userRequest){
+      this.toastService.emitToast("Error", "User not created", "error", true);
+    }
+  }
+
 }

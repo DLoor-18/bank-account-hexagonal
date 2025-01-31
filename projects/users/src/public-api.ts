@@ -3,3 +3,4 @@
  */
 
 export * from './infrastructure/ui/routes/users.routes';
+export * from './application/log-out.usecase';

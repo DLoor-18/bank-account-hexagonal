@@ -1,6 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { TokenService } from '../../../services/utils/token.service';
+import { LogOutUseCase } from 'users';
 
 @Component({
   selector: 'app-header',
@@ -9,8 +8,7 @@ import { TokenService } from '../../../services/utils/token.service';
   styleUrl: './header.component.scss'
 })
 export class HeaderComponent implements OnInit {
-  private router = inject(Router);
-  private tokenService = inject(TokenService);
+  private readonly _logOutUseCase = inject(LogOutUseCase);
   emailUser: string = '';
 
   ngOnInit(): void {
@@ -18,8 +16,7 @@ export class HeaderComponent implements OnInit {
   }
 
   logout() {
-    this.tokenService.revokeToken();
-    this.router.navigate(['login']);
+    this._logOutUseCase.execute();
   }
 
 }

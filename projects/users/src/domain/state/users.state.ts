@@ -13,7 +13,7 @@ export class UsersState {
   //#region Subjects
   private readonly auth$ = new BehaviorSubject<IAuthResponse>(null);
   private readonly user$ = new BehaviorSubject<IUserResponse>(null);
-  private readonly listUsers$ = new BehaviorSubject<IUserResponse[]>([]);
+  private readonly listUsers$ = new BehaviorSubject<IUserResponse[]>(null);
   //#endregion
 
   store() {

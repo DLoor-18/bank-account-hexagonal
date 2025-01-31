@@ -4,6 +4,7 @@ import { IUserRequest } from "../domain/model/user-request.model";
 import { IUserResponse } from "../domain/model/user-response.model";
 import { State } from "../domain/state";
 import { SaveUserService } from "../infrastructure/services/save-user.service";
+import { LoaderService } from "shared";
 
 @Injectable({
     providedIn: 'root'
@@ -12,6 +13,7 @@ export class SaveUsersUseCase {
     private readonly _service = inject(SaveUserService);
     private readonly _state = inject(State);
     private subscriptions: Subscription;
+    private loaderService = inject(LoaderService);
   
     //#region Observables
     saveUser$(): Observable<IUserResponse> {
@@ -29,11 +31,14 @@ export class SaveUsersUseCase {
     }
   
     execute(user: IUserRequest): void {
+      this.loaderService.show(true);
       this.subscriptions.add(
         this._service.saveUser(user)
           .pipe(
             tap(result => {
                 this._state.users.user.set(result);
+                this._state.users.listUsers.set([...this._state.users.listUsers.snapshot(), result]);
+                this.loaderService.show(false);
             })
           )
           .subscribe()
